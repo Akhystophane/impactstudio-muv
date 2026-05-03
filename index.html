@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MUV × Impact Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #000;
+    --fg: #fff;
+    --card: #0d0d0d;
+    --muted-fg: hsl(0 0% 65%);
+    --border: hsl(0 0% 20%);
+    --hero-subtitle: hsl(210 17% 95%);
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    overflow-x: hidden;
+    line-height: 1.5;
+  }
+
+  .serif { font-family: 'Instrument Serif', serif; font-style: italic; font-weight: 400; }
+
+  .liquid-glass {
+    background: rgba(255,255,255,0.01);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+  .liquid-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.4px;
+    background: linear-gradient(180deg,
+      rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.15) 20%,
+      rgba(255,255,255,0) 40%, rgba(255,255,255,0) 60%,
+      rgba(255,255,255,0.15) 80%, rgba(255,255,255,0.45) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .fade-up {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.65s ease, transform 0.65s ease;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+  .delay-1 { transition-delay: 0.1s; }
+  .delay-2 { transition-delay: 0.2s; }
+  .delay-3 { transition-delay: 0.3s; }
+  .delay-4 { transition-delay: 0.4s; }
+  .delay-5 { transition-delay: 0.5s; }
+
+  .word-reveal .word {
+    display: inline-block;
+    margin-right: 0.22em;
+    opacity: 0.15;
+    transition: opacity 0.35s ease;
+  }
+  .word-reveal .word.lit { opacity: 1; }
+
+  ::selection { background: rgba(255,255,255,0.15); }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #000; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+  input { outline: none; background: transparent; border: none; color: inherit; font-family: inherit; }
+  input::placeholder { color: var(--muted-fg); }
+  button { cursor: pointer; border: none; font-family: inherit; transition: transform 0.15s ease, opacity 0.15s ease; }
+  a { text-decoration: none; color: inherit; }
+
+  .hover-scale { transition: transform 0.18s ease; }
+  .hover-scale:hover { transform: scale(1.03); }
+  .hover-scale:active { transform: scale(0.97); }
+
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted-fg);
+    margin-bottom: 16px;
+  }
+
+  .divider { border: none; border-top: 1px solid rgba(255,255,255,0.07); }
+
+  /* Pill tag */
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted-fg);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 99px;
+    padding: 4px 12px;
+  }
+
+  /* Stat callout */
+  .stat-callout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .stat-callout .stat-num {
+    font-size: clamp(40px, 5vw, 72px);
+    font-weight: 700;
+    letter-spacing: -2px;
+    line-height: 1;
+  }
+  .stat-callout .stat-label {
+    font-size: 13px;
+    color: var(--muted-fg);
+    text-align: center;
+    max-width: 160px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useRef, useEffect, useState } = React;
+
+/* ── Intersection observer for fade-ups ─────────────────────────────────── */
+function useFadeUp() {
+  useEffect(() => {
+    const io = new IntersectionObserver(
+      entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+      { rootMargin: '-60px 0px' }
+    );
+    document.querySelectorAll('.fade-up').forEach(el => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+}
+
+/* ── Logo ────────────────────────────────────────────────────────────────── */
+const Logo = ({ outer = 28, inner = 12 }) => (
+  <div style={{ width: outer, height: outer, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <div style={{ width: inner, height: inner, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.6)' }} />
+  </div>
+);
+
+/* ── Navbar ──────────────────────────────────────────────────────────────── */
+const Navbar = () => {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', fn, { passive: true });
+    return () => window.removeEventListener('scroll', fn);
+  }, []);
+
+  const links = [
+    { label: 'Overview', href: '#hero' },
+    { label: 'Problem', href: '#problem' },
+    { label: 'Campus Pilot', href: '#campus' },
+    { label: 'Municipalities', href: '#municipalities' },
+    { label: 'Insights', href: '#insights' },
+  ];
+
+  const SocialBtn = ({ children }) => (
+    <div className="liquid-glass" style={{ width: 38, height: 38, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>{children}</div>
+  );
+
+  return (
+    <nav style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
+      padding: '14px clamp(24px,7vw,112px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      background: scrolled ? 'rgba(0,0,0,0.72)' : 'transparent',
+      backdropFilter: scrolled ? 'blur(14px)' : 'none',
+      transition: 'background 0.35s, backdrop-filter 0.35s',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <Logo />
+        <span style={{ fontWeight: 700, fontSize: 14, letterSpacing: '-0.3px' }}>Impact Studio</span>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        {links.map((l, i) => (
+          <React.Fragment key={l.label}>
+            <a href={l.href} style={{ fontSize: 12, color: 'var(--muted-fg)', padding: '4px 12px', transition: 'color 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--muted-fg)'}
+            >{l.label}</a>
+            {i < links.length - 1 && <span style={{ color: '#2a2a2a', fontSize: 10 }}>•</span>}
+          </React.Fragment>
+        ))}
+      </div>
+
+      
+    </nav>
+  );
+};
+
+/* ── Hero ────────────────────────────────────────────────────────────────── */
+const Hero = () => {
+  const vRef = useRef(null);
+  useEffect(() => { vRef.current?.play().catch(() => {}); }, []);
+
+  return (
+    <section id="hero" style={{ position: 'relative', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+      <video ref={vRef} autoPlay muted loop playsInline
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}
+        src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_120549_0cd82c36-56b3-4dd9-b190-069cfc3a623f.mp4" />
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.52)', zIndex: 1 }} />
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 300, background: 'linear-gradient(to top, #000, transparent)', zIndex: 2 }} />
+
+      <div style={{ position: 'relative', zIndex: 10, textAlign: 'center', padding: '0 24px', maxWidth: 860, margin: '0 auto', transform: 'translateY(-8vh)' }}>
+        {/* Heading */}
+        <h1 className="fade-up delay-1 visible" style={{ fontSize: 'clamp(34px,5.2vw,72px)', fontWeight: 500, letterSpacing: '-2px', lineHeight: 1.07, marginBottom: 20 }}>
+          Turning sustainable mobility<br />into a game <span className="serif">cities can scale</span>
+        </h1>
+
+        {/* Subtitle */}
+        <p className="fade-up delay-2 visible" style={{ fontSize: 16, color: 'var(--hero-subtitle)', maxWidth: 560, margin: '0 auto 40px', lineHeight: 1.7 }}>
+          Exploring how gamification can accelerate sustainable mobility adoption at scale in France through a campus pilot and a go-to-market strategy for French municipalities.
+        </p>
+
+        {/* CTA */}
+        <div className="fade-up delay-3 visible" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <a href="#problem">
+            <button className="hover-scale" style={{ background: '#fff', color: '#000', borderRadius: 10, padding: '13px 32px', fontSize: 14, fontWeight: 600 }}>
+              Explore the project
+            </button>
+          </a>
+          <a href="#campus">
+            <button className="liquid-glass hover-scale" style={{ borderRadius: 10, padding: '13px 28px', fontSize: 14, fontWeight: 500, color: '#fff' }}>
+              Watch the recap
+            </button>
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ── Problem Section ─────────────────────────────────────────────────────── */
+const ProblemSection = () => (
+  <section id="problem" style={{ padding: 'clamp(120px,12vw,220px) clamp(24px,5vw,80px) clamp(60px,6vw,100px)', textAlign: 'center' }}>
+    <div className="fade-up section-label">Problem</div>
+    <h2 className="fade-up delay-1" style={{ fontSize: 'clamp(32px,5.5vw,80px)', fontWeight: 500, letterSpacing: '-1.5px', lineHeight: 1.07, marginBottom: 24 }}>
+      Infrastructure enables change.<br /><span className="serif">It does not create habits.</span>
+    </h2>
+    <p className="fade-up delay-2" style={{ fontSize: 16, color: 'var(--muted-fg)', maxWidth: 680, margin: '0 auto 24px', lineHeight: 1.75 }}>
+      France does not lack sustainable mobility infrastructure, regulation or policy ambition. The harder challenge is behavioral: making citizens notice, trust and repeatedly use greener mobility options in their daily lives.
+    </p>
+    <p className="fade-up delay-3" style={{ fontSize: 16, color: 'var(--muted-fg)', maxWidth: 680, margin: '0 auto 72px', lineHeight: 1.75 }}>
+      MUV addresses this gap by acting as an engagement layer connecting existing systems, incentives and public objectives with user motivation.
+    </p>
+    <p className="fade-up" style={{ fontSize: 13, color: 'hsl(0 0% 38%)', fontStyle: 'italic' }}>
+      "The real challenge is not launching a mobility app. It is making people use it."
+    </p>
+  </section>
+);
+
+/* ── Approach / Word Reveal ──────────────────────────────────────────────── */
+const ApproachSection = () => {
+  const sectionRef = useRef(null);
+  const vRef = useRef(null);
+
+  const p1words = "Our solution was a dual-track market entry strategy. The institutional track tested whether French municipalities could become credible deployment partners. The community track tested whether a gamified tournament could generate real engagement in a controlled environment.".split(' ');
+  const p2words = "Together, these two tracks helped us move beyond theory and understand what sustainable mobility adoption actually requires on the ground.".split(' ');
+  const highlighted = new Set(['campus', 'pilot', 'go-to-market', 'municipalities', 'adoption']);
+
+  useEffect(() => {
+    vRef.current?.play().catch(() => {});
+    const section = sectionRef.current;
+    if (!section) return;
+    const words = section.querySelectorAll('.word');
+    const total = words.length;
+    const onScroll = () => {
+      const rect = section.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const progress = Math.max(0, Math.min(1, (vh - rect.top) / (vh + rect.height)));
+      words.forEach((w, idx) => {
+        const threshold = (idx / total) * 0.85;
+        if (progress >= threshold) w.classList.add('lit');
+        else w.classList.remove('lit');
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const WordPara = ({ words, size, mt = 0 }) => (
+    <p className="word-reveal" style={{ fontSize: size, fontWeight: 500, letterSpacing: '-0.4px', lineHeight: 1.4, marginTop: mt, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0 2px' }}>
+      {words.map((w, i) => {
+        const clean = w.replace(/[^a-z-]/gi, '').toLowerCase();
+        return <span key={i} className="word" style={{ color: highlighted.has(clean) ? '#fff' : 'var(--hero-subtitle)' }}>{w}</span>;
+      })}
+    </p>
+  );
+
+  return (
+    <section ref={sectionRef} style={{ padding: '0 clamp(24px,5vw,80px) clamp(100px,10vw,160px)', textAlign: 'center' }}>
+      <div className="fade-up section-label" style={{ marginBottom: 16 }}>Dual-Track Approach</div>
+      <h2 className="fade-up" style={{ fontSize: 'clamp(28px,4vw,52px)', fontWeight: 500, letterSpacing: '-1px', lineHeight: 1.1, marginBottom: 52, textAlign: 'center' }}>
+        Two tracks, <span className="serif">one objective</span> <br />move from idea to adoption
+      </h2>
+      <div className="fade-up delay-1" style={{ marginBottom: 72 }}>
+        <video ref={vRef} autoPlay muted loop playsInline
+          style={{ width: '100%', maxWidth: 820, borderRadius: 20, display: 'block', margin: '0 auto' }}
+          src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_132944_a0d124bb-eaa1-4082-aa30-2310efb42b4b.mp4" />
+      </div>
+
+      <div style={{ maxWidth: 960, margin: '0 auto' }}>
+        <WordPara words={p1words} size="clamp(18px,2.8vw,38px)" />
+        <WordPara words={p2words} size="clamp(15px,2vw,26px)" mt={36} />
+      </div>
+    </section>
+  );
+};
+
+/* ── YouTube Card (thumbnail + play → opens in new tab) ─────────────────── */
+const YTCard = ({ videoId, label }) => {
+  const [hovered, setHovered] = useState(false);
+  const thumb = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+  const url = `https://www.youtube.com/watch?v=${videoId}`;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center' }}>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          display: 'block',
+          width: 280,
+          height: 498,
+          borderRadius: 16,
+          overflow: 'hidden',
+          background: '#0d0d0d',
+          border: '1px solid var(--border)',
+          position: 'relative',
+          cursor: 'pointer',
+          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+          transform: hovered ? 'scale(1.02)' : 'scale(1)',
+          boxShadow: hovered ? '0 20px 60px rgba(0,0,0,0.6)' : '0 4px 24px rgba(0,0,0,0.3)',
+        }}
+      >
+        {/* Thumbnail */}
+        <img
+          src={thumb}
+          alt={label}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center',
+            transition: 'opacity 0.2s ease',
+            opacity: hovered ? 0.75 : 1,
+          }}
+          onError={e => { e.currentTarget.style.display = 'none'; }}
+        />
+        {/* Dark overlay */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%)',
+          zIndex: 1,
+        }} />
+        {/* Play button */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <div style={{
+            width: 56,
+            height: 56,
+            borderRadius: '50%',
+            background: hovered ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'transform 0.2s ease, background 0.2s ease',
+            transform: hovered ? 'scale(1.12)' : 'scale(1)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+          }}>
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+              <path d="M5 3.5L13 8L5 12.5V3.5Z" fill="#000" />
+            </svg>
+          </div>
+        </div>
+        {/* YouTube badge */}
+        <div style={{
+          position: 'absolute',
+          bottom: 14,
+          left: 14,
+          zIndex: 3,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          background: 'rgba(0,0,0,0.6)',
+          borderRadius: 6,
+          padding: '4px 8px',
+          backdropFilter: 'blur(6px)',
+        }}>
+          <svg width="14" height="10" viewBox="0 0 28 20" fill="none">
+            <rect width="28" height="20" rx="4" fill="#FF0000"/>
+            <path d="M11 6l8 4-8 4V6z" fill="white"/>
+          </svg>
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.8)', letterSpacing: '0.5px', fontFamily: 'inherit' }}>Regarder sur YouTube</span>
+        </div>
+      </a>
+      <span style={{ fontSize: 13, color: 'var(--muted-fg)', letterSpacing: '0.3px' }}>{label}</span>
+    </div>
+  );
+};
+
+/* ── Recap Video ─────────────────────────────────────────────────────────── */
+const RecapSection = () => (
+  <section style={{ padding: 'clamp(80px,8vw,140px) clamp(24px,5vw,80px)', borderTop: '1px solid rgba(255,255,255,0.07)', textAlign: 'center' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+      <div className="fade-up section-label">Project Recap</div>
+      <h2 className="fade-up delay-1" style={{ fontSize: 'clamp(28px,4vw,56px)', fontWeight: 500, letterSpacing: '-1px', lineHeight: 1.1, marginBottom: 16 }}>
+        One project. Two field experiments.<br /><span className="serif">One core question.</span>
+      </h2>
+      <p className="fade-up delay-2" style={{ fontSize: 15, color: 'var(--muted-fg)', maxWidth: 560, margin: '0 auto 52px', lineHeight: 1.7 }}>
+        The one-minute project recap videos are coming soon summarizing the campus pilot, the municipality outreach, and the central tension we encountered throughout.
+      </p>
+
+      {/* Video cards vertical frames, side by side */}
+      <div className="fade-up delay-3" style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap', maxWidth: 900, margin: '0 auto' }}>
+        {/* Campus Pilot YouTube Short */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center' }}>
+          <div style={{ width: 280, height: 498, borderRadius: 16, overflow: 'hidden', background: '#000', border: '1px solid var(--border)', position: 'relative' }}>
+            <iframe
+              src="https://www.youtube.com/embed/2qXbIKdEi68"
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+          <span style={{ fontSize: 13, color: 'var(--muted-fg)', letterSpacing: '0.3px' }}>Campus Pilot</span>
+        </div>
+
+        {/* Municipality YouTube Short */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center' }}>
+          <div style={{ width: 280, height: 498, borderRadius: 16, overflow: 'hidden', background: '#000', border: '1px solid var(--border)', position: 'relative' }}>
+            <iframe
+              src="https://www.youtube.com/embed/uO5pxCDE2Lc"
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+          <span style={{ fontSize: 13, color: 'var(--muted-fg)', letterSpacing: '0.3px' }}>Municipality Strategy</span>
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
+/* ── Campus Pilot ────────────────────────────────────────────────────────── */
+const CampusSection = () => {
+  const vRef = useRef(null);
+  useEffect(() => { vRef.current?.play().catch(() => {}); }, []);
+
+  const worked = [
+    { title: 'Gamification made it visible', desc: 'Points, rankings and a shared leaderboard turned individual commuting choices into a collective challenge people could see and feel.' },
+    { title: 'Creative + strategic execution', desc: 'We designed the challenge mechanics, built the communication strategy, and created visual assets moving from concept to live activation.' },
+    { title: 'Environmental impact tracked', desc: 'Participants connected individual actions to a real CO₂ counter. Progress became tangible, not just symbolic.' },
+  ];
+
+  return (
+    <section id="campus" style={{ padding: 'clamp(80px,8vw,140px) clamp(24px,5vw,80px)', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        {/* Header */}
+        <div className="fade-up section-label">Campus Pilot</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'start', marginBottom: 64 }}>
+          <div>
+            <h2 className="fade-up" style={{ fontSize: 'clamp(28px,4vw,52px)', fontWeight: 500, letterSpacing: '-1px', lineHeight: 1.1, marginBottom: 20 }}>
+              Testing behavior change<br />inside our own <span className="serif">community</span>
+            </h2>
+            <p className="fade-up delay-1" style={{ fontSize: 15, color: 'var(--muted-fg)', lineHeight: 1.75 }}>
+              We launched a team-based mobility tournament inside the Sciences Po Impact Studio community, structured around weekly competition and existing group identities to lower the social cost of participation and making each team's environmental impact visible in real time.
+            </p>
+          </div>
+          {/* Stat */}
+          <div className="fade-up delay-2" style={{ display: 'flex', gap: 32, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="stat-callout">
+              <span className="stat-num">50<span style={{ fontSize: '0.55em', fontWeight: 400 }}>kg</span></span>
+              <span className="stat-label">CO₂ saved so far through the pilot</span>
+            </div>
+            <div style={{ width: 1, height: 80, background: 'rgba(255,255,255,0.1)' }} />
+            <div className="stat-callout">
+              <span className="stat-num serif" style={{ fontStyle: 'italic' }}>Real</span>
+              <span className="stat-label">activation from concept to live campaign</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Video */}
+        <div className="fade-up" style={{ marginBottom: 56 }}>
+          <video ref={vRef} autoPlay muted loop playsInline
+            style={{ width: '100%', borderRadius: 16, aspectRatio: '3/1', objectFit: 'cover', display: 'block' }}
+            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_125119_8e5ae31c-0021-4396-bc08-f7aebeb877a2.mp4" />
+        </div>
+
+        {/* What worked */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px,1fr))', gap: 28, marginBottom: 48 }}>
+          {worked.map((w, i) => (
+            <div key={w.title} className={`fade-up delay-${i+1}`} style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 24 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>{w.title}</div>
+              <div style={{ fontSize: 13, color: 'var(--muted-fg)', lineHeight: 1.7 }}>{w.desc}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Key learning */}
+        <div className="fade-up" style={{ background: 'var(--card)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 32px', display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+          <div style={{ fontSize: 11, letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--muted-fg)', flexShrink: 0, paddingTop: 3 }}>Key learning</div>
+          <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--hero-subtitle)' }}>
+            A sustainable mobility challenge can generate real engagement, but only if the user experience removes friction from the very beginning.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ── Municipality Section ────────────────────────────────────────────────── */
+const MunicipalitySection = () => {
+  const vRef = useRef(null);
+  useEffect(() => {
+    const video = vRef.current;
+    if (!video) return;
+    const url = 'https://stream.mux.com/8wrHPCX2dC3msyYU9ObwqNdm00u3ViXvOSHUMRYSEe5Q.m3u8';
+    if (window.Hls && window.Hls.isSupported()) {
+      const hls = new window.Hls();
+      hls.loadSource(url);
+      hls.attachMedia(video);
+      hls.on(window.Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = url;
+      video.play().catch(() => {});
+    }
+  }, []);
+
+  const stats = [
+    { num: '5', label: 'French cities in active dialogue' },
+    { num: '1', label: 'most advanced prospect: Perpignan' },
+    { num: '2', label: 'strategic deployment tracks' },
+  ];
+
+  return (
+    <section id="municipalities" style={{ position: 'relative', padding: 'clamp(80px,8vw,140px) clamp(24px,5vw,80px)', borderTop: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+      <video ref={vRef} autoPlay muted loop playsInline
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.72)', zIndex: 1 }} />
+
+      <div style={{ position: 'relative', zIndex: 10, maxWidth: 1100, margin: '0 auto' }}>
+        <div className="fade-up section-label">Municipality Strategy</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'start', marginBottom: 60 }}>
+          <div>
+            <h2 className="fade-up" style={{ fontSize: 'clamp(28px,4vw,52px)', fontWeight: 500, letterSpacing: '-1px', lineHeight: 1.1, marginBottom: 20 }}>
+              Bringing MUV into the<br /><span className="serif">French municipal landscape</span>
+            </h2>
+            <p className="fade-up delay-1" style={{ fontSize: 15, color: 'var(--muted-fg)', lineHeight: 1.75, marginBottom: 24 }}>
+              In parallel with the pilot, we worked on MUV's go-to-market strategy in France. We deliberately focused on mid-sized cities rather than Paris, Lyon or Marseille territories with more accessible decision-making circuits, mature enough mobility governance, and a stronger need for visible citizen-engagement tools.
+            </p>
+            <p className="fade-up delay-2" style={{ fontSize: 15, color: 'var(--muted-fg)', lineHeight: 1.75 }}>
+              The five cities we engaged most actively Perpignan, Bourges, Auxerre, Rennes and Bordeaux each represented a different configuration of mobility maturity, political appetite, and citizen engagement infrastructure.
+            </p>
+          </div>
+
+          {/* Stats */}
+          <div className="fade-up delay-2" style={{ display: 'flex', gap: 0, justifyContent: 'center' }}>
+            {stats.map((s, i) => (
+              <React.Fragment key={s.label}>
+                <div className="stat-callout">
+                  <span className="stat-num">{s.num}</span>
+                  <span className="stat-label">{s.label}</span>
+                </div>
+                {i < stats.length - 1 && <div style={{ width: 1, height: 80, background: 'rgba(255,255,255,0.1)', alignSelf: 'center', margin: '0 28px' }} />}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+
+        {/* Key learning */}
+        <div className="fade-up" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 32px', display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+          <div style={{ fontSize: 11, letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--muted-fg)', flexShrink: 0, paddingTop: 3 }}>Key learning</div>
+          <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--hero-subtitle)' }}>
+            Municipalities are interested in sustainable mobility but their core question is practical: will citizens actually adopt the solution?
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ── Insights Section ────────────────────────────────────────────────────── */
+const InsightsSection = () => {
+  const insights = [
+    {
+      num: '01',
+      title: 'Motivation must be immediate',
+      desc: 'Users need to understand quickly what they gain from changing their behavior. Points, rankings and rewards only matter if the value loop is obvious and frictionless.',
+    },
+    {
+      num: '02',
+      title: 'Institutions create trust',
+      desc: 'Municipalities, universities and employers are not just distribution channels. They make the app credible and can turn individual participation into a collective challenge.',
+    },
+    {
+      num: '03',
+      title: 'Local context matters',
+      desc: 'A city with existing mobility programs does not need the same message as a city still exploring new solutions. Scaling requires adaptation, not copy-paste expansion.',
+    },
+  ];
+
+  return (
+    <section id="insights" style={{ padding: 'clamp(80px,8vw,140px) clamp(24px,5vw,80px)', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <div className="fade-up section-label">Insights</div>
+        <h2 className="fade-up delay-1" style={{ fontSize: 'clamp(28px,4vw,56px)', fontWeight: 500, letterSpacing: '-1px', lineHeight: 1.1, marginBottom: 16 }}>
+          Gamification is not a magic trick.<br /><span className="serif">It is an adoption system.</span>
+        </h2>
+        <p className="fade-up delay-2" style={{ fontSize: 15, color: 'var(--muted-fg)', maxWidth: 600, lineHeight: 1.7, marginBottom: 64 }}>
+          Our project showed that gamification can support sustainable mobility adoption but only when connected to a broader engagement strategy.
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px,1fr))', gap: 1, background: 'rgba(255,255,255,0.07)', borderRadius: 18, overflow: 'hidden' }}>
+          {insights.map((ins, i) => (
+            <div key={ins.num} className={`fade-up delay-${i+1}`} style={{ background: 'var(--bg)', padding: '40px 32px' }}>
+              <div style={{ fontSize: 11, color: 'hsl(0 0% 35%)', letterSpacing: '2px', fontFamily: 'monospace', marginBottom: 20 }}>{ins.num}</div>
+              <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 14, lineHeight: 1.3 }}>{ins.title}</div>
+              <div style={{ fontSize: 13, color: 'var(--muted-fg)', lineHeight: 1.75 }}>{ins.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ── Conclusion CTA ──────────────────────────────────────────────────────── */
+const ConclusionSection = () => (
+  <section style={{ padding: 'clamp(80px,8vw,140px) clamp(24px,5vw,80px)', borderTop: '1px solid rgba(255,255,255,0.07)', textAlign: 'center' }}>
+    <div style={{ maxWidth: 680, margin: '0 auto' }}>
+      <div className="fade-up" style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
+        <Logo outer={40} inner={20} />
+      </div>
+      <h2 className="fade-up delay-1" style={{ fontSize: 'clamp(32px,5vw,64px)', fontWeight: 500, letterSpacing: '-1px', lineHeight: 1.1, marginBottom: 20 }}>
+        From pilot to <span className="serif">scalable</span><br />mobility adoption
+      </h2>
+      <p className="fade-up delay-2" style={{ fontSize: 16, color: 'var(--muted-fg)', lineHeight: 1.7, marginBottom: 44 }}>
+        This project showed that sustainable mobility adoption depends on more than good intentions. Through the campus pilot and municipality outreach, we tested both sides of the problem: how to engage users, and how to create the institutional conditions for scale.
+      </p>
+      <div className="fade-up delay-3" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+        <a href="#campus">
+          <button className="hover-scale" style={{ background: '#fff', color: '#000', borderRadius: 10, padding: '14px 32px', fontSize: 14, fontWeight: 600 }}>
+            Watch the project recap
+          </button>
+        </a>
+        <a href="#problem">
+          <button className="liquid-glass hover-scale" style={{ borderRadius: 10, padding: '14px 28px', fontSize: 14, fontWeight: 500, color: '#fff' }}>
+            Read the full story
+          </button>
+        </a>
+      </div>
+    </div>
+  </section>
+);
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+const Footer = () => (
+  <footer style={{ padding: '40px clamp(24px,7vw,112px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <Logo outer={20} inner={8} />
+      <span style={{ fontSize: 13, color: 'var(--muted-fg)' }}>© 2026 Impact Studio. All rights reserved.</span>
+    </div>
+    <div style={{ display: 'flex', gap: 24 }}>
+      {['MUV', 'Privacy', 'Contact'].map(l => (
+        <a key={l} href="#" style={{ fontSize: 13, color: 'var(--muted-fg)', transition: 'color 0.2s' }}
+          onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--muted-fg)'}
+        >{l}</a>
+      ))}
+    </div>
+  </footer>
+);
+
+/* ── App ─────────────────────────────────────────────────────────────────── */
+const App = () => {
+  useFadeUp();
+  return (
+    <div>
+      <Navbar />
+      <Hero />
+      <ProblemSection />
+      <ApproachSection />
+      <RecapSection />
+      <CampusSection />
+      <MunicipalitySection />
+      <InsightsSection />
+      <ConclusionSection />
+      <Footer />
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
